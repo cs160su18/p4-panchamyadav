@@ -5,7 +5,6 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>P4 Drawing</title>
-
     <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
     <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
@@ -16,21 +15,42 @@
 </head>
 <body>
     <!-- You may change the dimensions of this canvas -->
-    <canvas id="myCanvas" width="750px" height="750px"></canvas>
+    <canvas id="myCanvas" width="1680px" height="1050px"></canvas>
 </body>
 <script>
-
+    window.addEventListener("deviceorientation", handleOrientation, true);
     // setting up the canvas and one paper tool
     var canvas = document.getElementById('myCanvas');
     paper.setup(canvas);
     var tool = new paper.Tool();
-
     // getting the URL (you may want to use for Exercise 3)
     var url = window.location.href;
+    var socket = new WebSocket('ws://p4-panchamyadav-pancham506781.codeanyapp.com:8765/');
+    var myPath = new paper.Path();
+    var colors = ["rgb(255,0,0)", "rgb(0,255,0)", "rgb(0,0,255)", "rgb(40,120,40)", "rgb(0,120,150)", "rgb(120,40,40)"];
+    var select = colors[Math.floor(Math.random() * colors.length)];
+    var dict = {}
+    dict[select] = myPath;
+    myPath.strokeColor = select;
 
-    // var socket = new WebSocket(
-    //     'ws://your url here:8765/');
-
+    tool.onMouseMove = function(event) {
+      myPath.add(event.point);
+      socket.send(JSON.stringify([event.point, select]));
+    }
+    socket.onmessage = function(received) {
+      var d = JSON.parse(received.data);
+      var pt = new paper.Point(d[0][1], d[0][2]);
+      var c = d[1];
+      if (!(c in dict)) {
+        dict[c] = new paper.Path();
+      }
+      var thePath = dict[c];
+      thePath.strokeColor = c;
+      thePath.add(pt);
+    }
+    
+    //Task 2
+    var acceleration = instanceOfDeviceMotionEvent.acceleration;
 
 </script>
 </html>
