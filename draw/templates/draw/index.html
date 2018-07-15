@@ -29,7 +29,7 @@
     var colors = ["rgb(255,0,0)", "rgb(0,255,0)", "rgb(0,0,255)", "rgb(40,120,40)", "rgb(0,120,150)", "rgb(120,40,40)"];
     var select = colors[Math.floor(Math.random() * colors.length)];
     var dict = {}
-    dict[select] = myPath;
+    //dict[select] = myPath;
     myPath.strokeColor = select;
 
     tool.onMouseMove = function(event) {
@@ -43,9 +43,11 @@
       if (!(c in dict)) {
         dict[c] = new paper.Path();
       }
-      var thePath = dict[c];
-      thePath.strokeColor = c;
-      thePath.add(pt);
+      if (url.includes("large")) {
+        var thePath = dict[c];
+        thePath.strokeColor = c;
+        thePath.add(pt);
+      }
     }
     
     //Task 2 - shaking the phone clears the canvas
@@ -65,13 +67,11 @@
         handleOrientationEvent(rotated);
       }, true);
     }
-
-  var handleOrientationEvent = function(rotated) {
-    if (rotated > 0) {
-      
-      myPath.strokeColor = select;
-    }
-  };
+    var handleOrientationEvent = function(rotated) {
+      if (rotated > 3) {
+        myPath.strokeColor = select;
+      }
+    };
 
 </script>
 </html>
