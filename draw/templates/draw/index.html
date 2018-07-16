@@ -6,6 +6,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>P4 Drawing</title>
     <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
     <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
     <script
@@ -14,6 +15,16 @@
       crossorigin="anonymous"></script>
 
     <style type="text/css">
+      .top-bar {
+        background-color: black;
+        width: 100%;
+        height: 45px;
+        color: white;
+        padding: 10px;
+        padding-left: 20px;
+        font-family: 'Raleway', sans-serif;
+        letter-spacing: 3px;
+      }
       .small-pic {
         height: 550px;
         width: 300px;
@@ -125,7 +136,14 @@
       $("#myCanvas").remove();
       $("#task_two").remove();
       $(function() {
-        $(".small-pic").css("background-color", select);
+        // this was for random colors --> $(".small-pic").css("background-color", select);
+        var images = ["https://1.bp.blogspot.com/-JovZR9UflHY/VvyJDSp3dhI/AAAAAAAAGZI/-LmL3PgvZ_cIJtgnSPC2ViebPRpMS9Miw/s1600/Wolf%2BWallpaper%2BLG%2BG5.jpg",
+                      "http://3.bp.blogspot.com/-E9PVHhelF5M/UgmHRpbVdlI/AAAAAAAAA7k/5QP-k4p1x4c/s1600/blue-dots_iP5.jpg",
+                      "http://2.bp.blogspot.com/-EeweO5hpnV4/T5DUqKFPa5I/AAAAAAAAGWk/3pBlLSsAqBs/s1600/wallpaper+cell+phone.jpg",
+                      "http://2.bp.blogspot.com/-_0MMnerQTb0/UNEEfnHyncI/AAAAAAAAA9E/rI0H_b3gNFs/s1600/lumia-620-wallpaper-wowwindows8_com_16.jpg",
+                      "http://3.bp.blogspot.com/-49ppcHRcbzM/VfTnP1W4VcI/AAAAAAAACvg/GYxYFkOSg7o/s1600/watercolor-iphone-6-wallpaper-free-download-apple.png"];
+        var oneimg = images[Math.floor(Math.random() * images.length)];
+        $('.small-pic').prepend('<img id="theImg" src=' + oneimg + ' height=100% width=100% />');
         $(".small-pic").draggable({revert: "invalid"});
         $("#top").droppable({
           over: function(event, ui) {
@@ -133,7 +151,7 @@
           },
           drop: function(event, ui) {
             $(".small-pic").hide();
-            socket.send(JSON.stringify(select));
+            socket.send(JSON.stringify($('.small-pic').find('img').attr("src")));
           },
           out: function(event, ui) {
             $(".small-pic").css("opacity", "1");
@@ -142,13 +160,17 @@
         if (url.includes("large")) {
           $(".small-pic").hide();
           $("#top").hide();
+          $(".all").append("<div class='top-bar'>MY PARTY | Jul 15</div>");
         }
       });
       socket.onmessage = function(received) {
         var d = received.data;
         if (url.includes("large")) {
-          $(".all").append("<div class='new-small-pic'></div>");
-          $(".new-small-pic:last-child").css("background-color", d);
+          $(".all").append("<div class='new-small-pic' </div>");
+          $(".new-small-pic:last-child").css("display", "inline-block");
+          $(".new-small-pic:last-child").prepend('<img id="theImg" src=' + d + ' height=100% width=100% />');
+          //$(".new-small-pic:last-child").css("background-color", d);
+          $(".new-small-pic:last-child").css("margin", "5%");
         }
       }
     }
