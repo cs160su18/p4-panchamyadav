@@ -8,15 +8,45 @@
     <link rel="stylesheet" type="text/css" href="{% static 'draw/vendor/bootstrap/css/bootstrap.min.css' %}">
     <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'draw/vendor/paper/paper-full.min.js' %}"></script>
+    <script
+      src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+      integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+      crossorigin="anonymous"></script>
 
     <style type="text/css">
+      #small-pic {
+        height: 100px;
+        width: 100px;
+        background-color: orange;
+        margin: 10% auto;
+      }
+      #top {
+        height: 200px;
+        width: 600px;
+        background-color: blue;
+        margin: auto;
+      }
+      #task_two {
+        padding-top: 100px;
+        height: 300px;
+        width: 600px;
+        background-color: black;
+        margin: auto;
+        text-align: center;
+        size: 12px;
+        color: white;
+      }
     </style>
 
 </head>
 <body>
     <!-- You may change the dimensions of this canvas -->
+    <div id="task_two">Shake to remove</div>
+    <div id="top"></div>
+    <div id="small-pic"></div>
     <canvas id="myCanvas" width="1680px" height="1050px"></canvas>
 </body>
+<script type="text/javascript" src="https://cdn.rawgit.com/alexgibson/shake.js/master/shake.js"></script>
 <script>
     // setting up the canvas and one paper tool
     var canvas = document.getElementById('myCanvas');
@@ -31,47 +61,78 @@
     var dict = {}
     //dict[select] = myPath;
     myPath.strokeColor = select;
+    if (!url.includes("custom")) {
+      if (!url.includes("task_two")) {}
+      $("#small-pic").css("display", "none");
+      $("#top").css("display", "none");
+      tool.onMouseMove = function(event) {
+        myPath.add(event.point);
+        socket.send(JSON.stringify([event.point, select]));
+      }
+      socket.onmessage = function(received) {
+        var d = JSON.parse(received.data);
+        var pt = new paper.Point(d[0][1], d[0][2]);
+        var c = d[1];
+        if (!(c in dict)) {
+          dict[c] = new paper.Path();
+        }
+        if (url.includes("large")) {
+          var thePath = dict[c];
+          thePath.strokeColor = c;
+          thePath.add(pt);
+        }
+      }
 
-    tool.onMouseMove = function(event) {
-      myPath.add(event.point);
-      socket.send(JSON.stringify([event.point, select]));
-    }
-    socket.onmessage = function(received) {
-      var d = JSON.parse(received.data);
-      var pt = new paper.Point(d[0][1], d[0][2]);
-      var c = d[1];
-      if (!(c in dict)) {
-        dict[c] = new paper.Path();
+      //Task 2 - shaking the phone clears the canvas
+      window.addEventListener('devicemotion', function(event) {
+        if (event.acceleration.x > 0 
+            || event.acceleration.y != 0 
+            || event.acceleration.z > 0) {
+         //do something
+        }
+      });
+      
+       //listen to shake event
+      var shakeEvent = new Shake({threshold: 15});
+      shakeEvent.start();
+      window.addEventListener('shake', function(){
+        $("#task_two").hide();
+      }, false);
+      //stop listening
+      function stopShake(){
+         shakeEvent.stop();
       }
-      if (url.includes("large")) {
-        var thePath = dict[c];
-        thePath.strokeColor = c;
-        thePath.add(pt);
-      }
-    }
     
-    //Task 2 - shaking the phone clears the canvas
-    window.addEventListener('devicemotion', function(event) {
-      if (event.acceleration.x > 0 
-          || event.acceleration.y != 0 
-          || event.acceleration.z > 0) {
-       paper.project.activeLayer.removeChildren();
-       paper.view.draw();
+     //Task 2 - changing the orientation changes color
+     if (window.DeviceOrientationEvent) {
+      window.addEventListener("deviceorientation", function(event) {
+          var rotated = event.gamma;
+          handleOrientationEvent(rotated);
+        }, true);
       }
-    });
-  
-   //Task 2 - changing the orientation changes color
-   if (window.DeviceOrientationEvent) {
-    window.addEventListener("deviceorientation", function(event) {
-        var rotated = event.gamma;
-        handleOrientationEvent(rotated);
-      }, true);
+      var handleOrientationEvent = function(rotated) {
+        if (rotated > 3) {
+          var change = colors[Math.floor(Math.random() * colors.length)];
+          var incasetheresabug = 0;
+          while (change == select) {
+            if (incasetheresabug > 10) {
+              console.log("THERE'S A BUG");
+              return;
+            }
+            change = colors[Math.floor(Math.random() * colors.length)];
+            incasetheresabug += 1;
+          }
+          myPath.strokeColor = change;
+          select = change;
+        }
+      }
+    } else {
+      $("#myCanvas").remove();
+      $("#task_two").remove();
+      $(function() {
+        $("#small-pic").draggable();
+      });
     }
-    var handleOrientationEvent = function(rotated) {
-      if (rotated > 3) {
-        myPath.strokeColor = select;
-      }
-    };
 
 </script>
 </html>
