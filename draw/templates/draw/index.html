@@ -14,17 +14,17 @@
       crossorigin="anonymous"></script>
 
     <style type="text/css">
-      #small-pic {
-        height: 100px;
-        width: 100px;
-        background-color: orange;
-        margin: 10% auto;
+      .small-pic {
+        height: 550px;
+        width: 300px;
+        margin: 3% auto;
       }
       #top {
-        height: 200px;
-        width: 600px;
-        background-color: blue;
-        margin: auto;
+        position: absolute;
+        height: 30%;
+        width: 20%;
+        left: 40%;
+        bottom: 75%;
       }
       #task_two {
         padding-top: 100px;
@@ -36,15 +36,21 @@
         size: 12px;
         color: white;
       }
+      .new-small-pic {
+        height: 550px;
+        width: 300px;
+      }
     </style>
 
 </head>
 <body>
-    <!-- You may change the dimensions of this canvas -->
-    <div id="task_two">Shake to remove</div>
-    <div id="top"></div>
-    <div id="small-pic"></div>
-    <canvas id="myCanvas" width="1680px" height="1050px"></canvas>
+    <div class="all">
+      <!-- You may change the dimensions of this canvas -->
+      <div id="task_two">Shake to remove</div>
+      <div id="top"></div>
+      <div class="small-pic"></div>
+      <canvas id="myCanvas" width="1680px" height="1050px"></canvas>
+    </div>
 </body>
 <script type="text/javascript" src="https://cdn.rawgit.com/alexgibson/shake.js/master/shake.js"></script>
 <script>
@@ -62,9 +68,9 @@
     //dict[select] = myPath;
     myPath.strokeColor = select;
     if (!url.includes("custom")) {
-      if (!url.includes("task_two")) {}
-      $("#small-pic").css("display", "none");
-      $("#top").css("display", "none");
+      $(".small-pic").remove();
+      $("#top").remove();
+      $("#task_two").hide();
       tool.onMouseMove = function(event) {
         myPath.add(event.point);
         socket.send(JSON.stringify([event.point, select]));
@@ -82,56 +88,69 @@
           thePath.add(pt);
         }
       }
+      if (url.includes("task_two")) {
+        $("#task_two").show();
+        $(".small-pic").remove();
+        $("#top").remove();
 
-      //Task 2 - shaking the phone clears the canvas
-      window.addEventListener('devicemotion', function(event) {
-        if (event.acceleration.x > 0 
-            || event.acceleration.y != 0 
-            || event.acceleration.z > 0) {
-         //do something
+         //listen to shake event
+        var shakeEvent = new Shake({threshold: 15});
+        shakeEvent.start();
+        window.addEventListener('shake', function(){
+          $("#task_two").hide();
+          myPath.remove();
+        }, false);
+        //stop listening
+        function stopShake(){
+           shakeEvent.stop();
         }
-      });
-      
-       //listen to shake event
-      var shakeEvent = new Shake({threshold: 15});
-      shakeEvent.start();
-      window.addEventListener('shake', function(){
-        $("#task_two").hide();
-      }, false);
-      //stop listening
-      function stopShake(){
-         shakeEvent.stop();
-      }
-    
-     //Task 2 - changing the orientation changes color
-     if (window.DeviceOrientationEvent) {
-      window.addEventListener("deviceorientation", function(event) {
-          var rotated = event.gamma;
-          handleOrientationEvent(rotated);
-        }, true);
-      }
-      var handleOrientationEvent = function(rotated) {
-        if (rotated > 3) {
-          var change = colors[Math.floor(Math.random() * colors.length)];
-          var incasetheresabug = 0;
-          while (change == select) {
-            if (incasetheresabug > 10) {
-              console.log("THERE'S A BUG");
-              return;
-            }
-            change = colors[Math.floor(Math.random() * colors.length)];
-            incasetheresabug += 1;
+
+       //Task 2 - changing the orientation changes color
+       if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", function(event) {
+            var rotated = event.gamma;
+            handleOrientationEvent(rotated);
+          }, true);
+        }
+        var handleOrientationEvent = function(rotated) {
+          if (rotated > 89) {
+            // if (rotated > 3) seemed to work sometimes as well
+            var change = colors[Math.floor(Math.random() * colors.length)];
+            myPath.strokeColor = change;
+            $("#task_two").css("background-color", change);
           }
-          myPath.strokeColor = change;
-          select = change;
         }
       }
     } else {
       $("#myCanvas").remove();
       $("#task_two").remove();
       $(function() {
-        $("#small-pic").draggable();
+        $(".small-pic").css("background-color", select);
+        $(".small-pic").draggable({revert: "invalid"});
+        $("#top").droppable({
+          over: function(event, ui) {
+            $(".small-pic").css("opacity", "0.6");
+          },
+          drop: function(event, ui) {
+            $(".small-pic").hide();
+            socket.send(JSON.stringify(select));
+          },
+          out: function(event, ui) {
+            $(".small-pic").css("opacity", "1");
+          }
+        });
+        if (url.includes("large")) {
+          $(".small-pic").hide();
+          $("#top").hide();
+        }
       });
+      socket.onmessage = function(received) {
+        var d = received.data;
+        if (url.includes("large")) {
+          $(".all").append("<div class='new-small-pic'></div>");
+          $(".new-small-pic:last-child").css("background-color", d);
+        }
+      }
     }
 
 </script>
